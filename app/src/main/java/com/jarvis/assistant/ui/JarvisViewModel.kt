@@ -41,6 +41,14 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         aiBackend = AiBackend(AiConfig(apiKey = apiKey))
     }
 
+    fun updateAiConfig(config: AiConfig) {
+        if (aiBackend == null) {
+            aiBackend = AiBackend(config)
+        } else {
+            aiBackend?.updateConfig(config)
+        }
+    }
+
     fun toggleListening() {
         if (voiceEngine.isListening()) {
             voiceEngine.stopListening()
@@ -56,29 +64,23 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
             _isListening.value = false
             voiceEngine.stopListening()
 
-            // Add user message
             val userMessage = ChatMessage(role = "user", content = text)
             chatDao.insert(userMessage)
             _messages.value = _messages.value + userMessage
 
-            // Parse command
             val command = commandParser.parse(text)
 
-            // Handle command or AI
             val response = when (command) {
                 is Command.AskAI -> {
-                    aiBackend?.ask(text) ?: "AI не настроен. Скажите 'помощь' для списка команд."
+                    aiBackend?.ask(text) ?: "AI не настроен. Скажите 'настрой AI'."
                 }
                 else -> commandHandler.execute(command)
             }
 
             if (response.isNotBlank()) {
-                // Add Jarvis response
                 val jarvisMessage = ChatMessage(role = "jarvis", content = response)
                 chatDao.insert(jarvisMessage)
                 _messages.value = _messages.value + jarvisMessage
-
-                // Speak response
                 voiceEngine.speak(response)
             }
         }
