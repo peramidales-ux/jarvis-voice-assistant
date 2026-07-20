@@ -8,7 +8,6 @@ import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
-import com.jarvis.assistant.permissions.PermissionManager
 
 class HotWordDetector(
     private val context: Context,
@@ -20,7 +19,6 @@ class HotWordDetector(
     private val handler = Handler(Looper.getMainLooper())
 
     fun start() {
-        if (!PermissionManager.hasAudioPermission(context)) return
         if (!SpeechRecognizer.isRecognitionAvailable(context)) return
         startListening()
     }
@@ -31,7 +29,7 @@ class HotWordDetector(
 
     private fun startListening() {
         try {
-            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
+            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context.applicationContext).apply {
                 setRecognitionListener(createListener())
             }
             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
