@@ -9,12 +9,14 @@ import com.jarvis.assistant.MainActivity
 import com.jarvis.assistant.commands.CommandHandler
 import com.jarvis.assistant.commands.CommandParser
 import com.jarvis.assistant.voice.VoiceEngine
+import kotlinx.coroutines.*
 
 class JarvisService : Service() {
     private lateinit var voiceEngine: VoiceEngine
     private lateinit var commandParser: CommandParser
     private lateinit var commandHandler: CommandHandler
     private lateinit var hotWordDetector: HotWordDetector
+    private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     companion object {
         private const val CHANNEL_ID = "jarvis_service"
@@ -54,7 +56,7 @@ class JarvisService : Service() {
     private fun startListening() {
         updateNotification("Слушаю...")
         voiceEngine.startListening()
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+        serviceScope.launch {
             voiceEngine.lastResult.collect { text ->
                 if (text.isNotBlank()) {
                     processCommand(text)
@@ -104,6 +106,7 @@ class JarvisService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        serviceScope.cancel()
         hotWordDetector.stop()
         voiceEngine.shutdown()
         isRunning = false
